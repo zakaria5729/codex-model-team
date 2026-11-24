@@ -1,207 +1,363 @@
+
 # Codex Model Team
 
-A reusable **project-local Codex setup** consisting of:
+A reusable, project-local multi-agent setup for OpenAI Codex.
 
-1. A real Codex plugin that packages the `model-team` workflow skill.
-2. A repository marketplace entry that points to the plugin in this repository.
-3. Project-local custom agent definitions under `.codex/agents/`.
-4. An installer that adds the marketplace entry and agents to another project without installing agent configuration globally or overwriting existing settings.
+Codex Model Team provides specialized agents for implementation, architecture advice, code exploration, independent code review, UI review, and documentation research.
 
-## Model routing
+The setup is designed to be installed directly into any project without modifying global Codex configuration.
+
+## Features
+
+- Project-local Codex configuration
+- Specialized custom agents
+- Reusable Model Team workflow skill
+- GitHub-based plugin marketplace
+- One-command installation
+- No Python, Node.js, or Git required on the target machine
+- Existing project settings and agent files are preserved
+- Custom GitHub repository owner support
+
+## Model Team
 
 | Role | Model | Reasoning |
 |---|---|---|
-| Main implementation | GPT-6.2 Sol | Medium; High for broader refactors |
+| Main implementation | GPT-6.2 Sol | Medium |
 | Architecture advisor | GPT-6.2 Astra | High |
 | Local project explorer | GPT-6 Luna | High |
 | Independent code reviewer | GPT-6.2 Astra | High |
 | UI / screenshot reviewer | GPT-6.1 Terra | Medium |
 | Documentation researcher | GPT-6 Luna | High |
 
-Model IDs and recommendations follow current OpenAI model guidance. Availability depends on the Codex client, plan, and workspace settings. The installer preserves a project's already-configured primary model rather than replacing it.
+Model availability and supported reasoning levels depend on the Codex client, account, and workspace configuration.
 
-## What is and is not inside the plugin
+The installer uses Sol / Medium as the default main model only when the project does not already have a model configured.
 
-The plugin packages the reusable skill in:
+## Architecture
+
+The repository contains:
 
 ```text
-plugins/codex-model-team/
-├── plugin.json
-├── .codex-plugin/plugin.json   # compatibility fallback
-└── skills/model-team/SKILL.md
+codex-model-team/
+│
+├── .codex/
+│   ├── config.toml
+│   └── agents/
+│       ├── advisor.toml
+│       ├── explorer.toml
+│       ├── reviewer.toml
+│       ├── ui-reviewer.toml
+│       └── docs-researcher.toml
+│
+├── .agents/
+│   └── plugins/
+│       └── marketplace.json
+│
+├── plugins/
+│   └── codex-model-team/
+│       ├── plugin.json
+│       ├── .codex-plugin/
+│       └── skills/
+│           └── model-team/
+│               └── SKILL.md
+│
+├── scripts/
+├── tests/
+├── install.sh
+└── README.md
 ```
 
-Custom Codex agents are **not currently a portable plugin component**. They are separate project-local TOML files in `.codex/agents/`. This repository includes those files as templates, and the installer copies them into the target repository. This split follows Codex's current plugin and subagent formats.
+### Plugin and custom agents
 
-## Install into a project (no Python or Git required on the target PC)
+The plugin packages the reusable `model-team` workflow skill.
 
-The Bash installer asks for the GitHub username/organization that owns the `codex-model-team` repository. It does **not** require you to edit `install.sh` or hardcode your username in the script.
+Custom Codex agents are maintained separately as project-local TOML files under `.codex/agents/`.
 
-Run it from the root of the project you want to configure:
+The installer copies those agent definitions into the target project.
+
+## Installation
+
+### Requirements
+
+- OpenAI Codex CLI
+- Bash
+- curl
+- tar
+
+No Python, Node.js, Git, or separate toolkit clone is required on the target machine.
+
+### One-command installation
+
+The default GitHub repository is:
+
+https://github.com/zakaria5729/codex-model-team
+
+Open your terminal inside the project where you want to install Model Team.
+
+Run:
 
 ```bash
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh | bash
 ```
 
-The installer prompts:
+That's it.
+
+The installer automatically uses:
 
 ```text
-GitHub username or organization that owns the codex-model-team repository:
+GitHub owner: zakaria5729
+Repository:   codex-model-team
+Branch:       main
 ```
 
-It then downloads the repository, installs the project-local agents, registers the marketplace, and saves the selected repository coordinates in:
+No username prompt is required.
+
+### Install into a specific directory
+
+You can also provide a target directory:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
+  | bash -s -- --target /path/to/your/project
+```
+
+## Use another GitHub owner
+
+The default owner is `zakaria5729`.
+
+If you fork this repository or maintain your own copy, you can override the owner:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
+  | bash -s -- --username YOUR_GITHUB_USERNAME
+```
+
+You can also use another repository name or branch:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
+  | bash -s -- \
+      --username YOUR_GITHUB_USERNAME \
+      --repo codex-model-team \
+      --ref main
+```
+
+The selected repository coordinates are saved in:
 
 ```text
 .codex/model-team.env
 ```
 
-This file contains only public source information (owner, repository, and branch), not credentials. Commit it with the project if you want the same source coordinates remembered on other PCs.
-
-### One-command remote installation (GitHub only; no Gist required)
-
-The installer is hosted directly in this same GitHub repository. From the root of any target project, run:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/codex-model-team/main/install.sh | bash
-```
-
-Replace `OWNER` with the GitHub username or organization that owns the `codex-model-team` repository. The script itself then asks which owner/repository should supply the full toolkit, and saves the selected owner, repository, and ref in `.codex/model-team.env`.
-
-The URL owner identifies where the bootstrap installer is downloaded from. The interactive prompt selects the repository from which the full toolkit archive is downloaded. In the usual setup, both owners will be the same.
-
-The installer opens `/dev/tty` for the prompt, so username input works even though the script itself is piped from `curl`. No Gist, Python, Node.js, Git, or separate toolkit clone is required on the target PC.
-
-You can also provide the toolkit owner without an interactive prompt:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/codex-model-team/main/install.sh | bash -s -- --username OWNER
-```
-
-### Change the GitHub owner at any time
-
-Run the same GitHub Raw install command again from the target project. The installer reads the previously saved owner and shows it as the default:
+Example:
 
 ```text
-GitHub username or organization that owns the codex-model-team repository [old-owner]:
+owner=zakaria5729
+repo=codex-model-team
+ref=main
 ```
 
-- Press **Enter** to keep the current owner.
-- Type a new GitHub username/organization to change the source repository.
+The file contains public repository information only. It does not contain credentials or secrets.
 
-You can also change it without an interactive prompt:
+### Change the owner later
+
+You can change the repository owner at any time by rerunning the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/codex-model-team/main/install.sh | bash -s -- --username NEW_GITHUB_OWNER
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
+  | bash -s -- --username NEW_OWNER
 ```
 
-Or, when running the local script:
+The installer updates the saved repository coordinates and marketplace source.
 
-```bash
-./install.sh --username NEW_GITHUB_OWNER
+## What gets installed?
+
+The installer creates or updates:
+
+```text
+your-project/
+│
+├── .codex/
+│   ├── config.toml
+│   ├── model-team.env
+│   └── agents/
+│       ├── advisor.toml
+│       ├── explorer.toml
+│       ├── reviewer.toml
+│       ├── ui-reviewer.toml
+│       └── docs-researcher.toml
+│
+└── .agents/
+    └── plugins/
+        └── marketplace.json
 ```
 
-The installer downloads from the new owner, updates the Model Team marketplace source URL, and updates `.codex/model-team.env`. If the project already has a marketplace containing other plugins and `jq` is not installed, the installer safely refuses to rewrite that marketplace rather than risk damaging other entries. In that case, install `jq` and rerun the installer.
+### Existing project protection
 
-### Other options
+The installer is designed to preserve existing project configuration.
 
-```bash
-./install.sh --help
-./install.sh --username OWNER --repo codex-model-team --ref main
-./install.sh --target /path/to/project --username OWNER
+- Existing agent files are not overwritten.
+- Existing main model settings are preserved.
+- Existing project-level Codex settings are preserved.
+- Existing marketplace plugins are retained when `jq` is available for safe JSON merging.
+- If an existing marketplace needs merging but `jq` is unavailable, the installer stops instead of overwriting it.
+
+The installer does not modify:
+
+```text
+~/.codex/config.toml
+~/.codex/agents/
 ```
 
-The installer requires Bash, `curl`, `tar`, and standard Unix utilities. It does not require Python, Git, Node.js, or a separate clone of this toolkit on the target PC. On Windows, use WSL or Git Bash.
+All agent configuration is project-local.
 
-The installer:
+## Start using Model Team
 
-- copies custom agent TOML files into the target project's `.codex/agents/`;
-- creates or updates `.agents/plugins/marketplace.json` to point to this repository's plugin through a Git-backed `git-subdir` source;
-- enables the project-local plugin in `.codex/config.toml`;
-- adds Sol / Medium main-model defaults only when the target project has not already configured them; and
-- preserves existing agent files and existing project settings.
-
-After installation, open Codex from the target project and trust it when prompted:
+After installation:
 
 ```bash
 cd /path/to/your/project
 codex
+```
+
+Trust the project if Codex asks.
+
+Check the marketplace:
+
+```bash
 codex plugin marketplace list
 ```
 
-Then ask Codex to use the Model Team skill:
+Then ask Codex:
 
 ```text
 Use the Model Team skill for this task.
-Have explorer investigate the current code, advisor assess the plan,
-implement the agreed change, and reviewer inspect the final diff.
-Use ui-reviewer only if visual inspection is relevant.
+
+1. Have explorer inspect the relevant codebase.
+2. Have advisor analyze the architecture and recommend an approach.
+3. Have implementation implement the agreed changes.
+4. Have reviewer independently review the final diff.
+5. Fix important findings and run relevant tests.
+
+Use ui-reviewer when visual inspection is relevant.
+Use docs-researcher when external documentation research is needed.
+
+Provide a final summary with changed files, tests, and review findings.
 ```
 
-## Use on another PC
+## Using Model Team on another PC
 
-There are two separate pieces:
+The target project's following files can be committed to its Git repository:
 
-- The **target project's** `.agents/plugins/marketplace.json`, `.codex/config.toml`, and `.codex/agents/` are committed to the target project's Git repository. They travel with the project when cloned on another PC.
-- The plugin package is fetched from the Git URL in that marketplace entry. It is cached by Codex under its local plugin cache on each PC. The project-scoped marketplace and enablement keep it associated with the project; the plugin cache itself is maintained by Codex in the user's home directory.
+- `.codex/config.toml`
+- `.codex/agents/`
+- `.codex/model-team.env`
+- `.agents/plugins/marketplace.json`
 
-On another PC, install Codex CLI, sign in, clone the target project, trust it, and start Codex from the project directory. No global agent installation is needed. If the plugin needs refreshing, run the marketplace upgrade command shown by `codex plugin marketplace --help` / current Codex documentation.
+On another PC:
 
-## Update the toolkit
+1. Install Codex CLI.
+2. Sign in to Codex.
+3. Clone the target project.
+4. Trust the project if prompted.
+5. Start Codex from the project directory.
 
-1. Update this repository and push the change to GitHub.
-2. In the target project, refresh its marketplace source (Codex CLI supports `codex plugin marketplace upgrade`).
-3. To update custom agents, rerun the installer. Existing agent files are not overwritten automatically; compare the generated update with your local files and merge intentionally.
+The plugin package is fetched and cached by Codex on each PC.
 
-## Uninstall from one project
+Your Codex authentication is not included in the project repository.
 
-- Remove the `codex-model-team@<marketplace-name>` plugin table from that project's `.codex/config.toml`.
-- Remove the `codex-model-team` marketplace entry from `.agents/plugins/marketplace.json` (remove the marketplace file only if it becomes empty and the project does not use it for other plugins).
-- Remove the agent TOML files from `.codex/agents/` after confirming they are the Model Team copies.
+## Update Model Team
 
-This does not remove Codex's user-level plugin cache. Codex manages that cache separately.
+To update the custom agent templates, rerun the installer.
 
-## Important permissions note
+Existing agent files are intentionally preserved. Review and merge template changes when necessary.
 
-The explorer, advisor, reviewer, UI reviewer, and docs researcher are instructed not to modify files where appropriate. Custom agent instructions are not a security boundary: subagents inherit the parent session's sandbox and approval settings. Set the parent session's permission level appropriately before delegating.
+To refresh the plugin marketplace source, use the marketplace commands supported by your installed Codex CLI:
 
-## Repository marketplace for this toolkit itself
+```bash
+codex plugin marketplace --help
+```
 
-This repository already contains a local repo marketplace at `.agents/plugins/marketplace.json` and project settings in `.codex/config.toml`. That lets you test the plugin in this repository before distributing it.
+## Uninstall
 
-## Validation
+To remove Model Team from a project:
 
-Maintainers can run the optional repository validation suite with Python 3:
+1. Remove the Model Team plugin entry from `.codex/config.toml`.
+2. Remove its marketplace entry from `.agents/plugins/marketplace.json`.
+3. Remove the Model Team agent TOML files from `.codex/agents/`.
+4. Remove `.codex/model-team.env`.
+
+Do not delete a marketplace file if it contains other plugins you still use.
+
+Codex manages its local plugin cache separately.
+
+## Repository validation
+
+Maintainers can run the repository validation suite:
 
 ```bash
 python3 scripts/validate_repository.py
 python3 -m unittest discover -s tests -v
 ```
 
-Python is used only for repository-maintainer tests; end users installing Model Team do not need Python.
+Python is only needed for maintainer tests, not for end-user installation.
 
-## References
+## Contributing
 
-- [Build Codex plugins](https://developers.openai.com/plugins/build/plugins)
-- [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- [Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference)
-- [OpenAI model catalog](https://developers.openai.com/api/docs/models)
+Issues and pull requests are welcome.
+
+If you fork this repository, use your own GitHub owner with the `--username` option.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](LICENSE).
+```
 
-## Public Plugins Directory submission
+---
 
-This repository marketplace is for source-based testing and distribution. The public Plugins Directory uses a separate ZIP upload and review flow. The public submission package is built from the contents of `plugins/codex-model-team/`, not from the entire repository.
+## 3. GitHub-এ কী করবে
 
-Before uploading a public submission ZIP:
+<box border radius="lg" padding={3} gap={3}>
+  <row align="center" gap={2}>
+    <icon name="github" size="xl"/>
+    **File update checklist**
+  </row>
+  <list marker="number" gap={2}>
+    <list-item>
+      [install.sh Edit](https://github.com/zakaria5729/codex-model-team/edit/main/install.sh) খুলবে।
+      
+      পুরো content replace করে Commit changes করবে।
+    </list-item>
+    <list-item>
+      [README.md Edit](https://github.com/zakaria5729/codex-model-team/edit/main/README.md) খুলবে।
+      
+      পুরো content replace করে Commit changes করবে।
+    </list-item>
+    <list-item>
+      দুটো ফাইলই `main` branch-এ commit হয়েছে কিনা নিশ্চিত করবে।
+    </list-item>
+  </list>
+</box>
 
-1. Replace `REPLACE WITH YOUR VERIFIED PUBLISHER NAME` in `plugins/codex-model-team/plugin.json` with the publisher name you intend to use.
-2. Confirm the verified developer identity and submission permissions in your OpenAI organization settings.
-3. Build the plugin-only ZIP with `zip -r codex-model-team-public-submission.zip plugin.json .codex-plugin skills assets` from inside `plugins/codex-model-team/`.
-4. Upload it at <https://platform.openai.com/plugins>, resolve automated metadata/skills findings, submit for review, and publish after approval.
+## 4. Installation test
 
-The package is skills-only: it has no MCP server and no lifecycle hooks. Skills-only submissions do not require MCP review cases or website/support/privacy/terms URLs. Do not add secrets or private credentials to the ZIP.
+Commit করার পর অন্য একটি project directory-তে গিয়ে এই command চালিয়ে পরীক্ষা করতে পারো:
 
-The public plugin can provide the Model Team workflow and agent setup instructions/templates. It cannot automatically make custom TOML subagents active merely by being installed; the user must invoke the setup skill in a project to create `.codex/agents/*.toml` there, then start a new Codex session in that project.
+```bash
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh | bash
+```
 
+Expected output-এ দেখতে পাবে:
+
+```text
+Repository : zakaria5729/codex-model-team
+Branch     : main
+
+==> Downloading repository...
+==> Installing project-local agents...
+==> Registering plugin marketplace...
+==> Configuring Codex...
+
+Codex Model Team installed successfully
+```
+
+**একটি বিষয়:** আমি এখানে GitHub repository-তে সরাসরি commit করিনি। এই content তোমাকে নিজে paste করে commit করতে হবে। আর production ব্যবহারের আগে installer-টি একটি disposable test project-এ পরীক্ষা করো—বিশেষ করে আগে থেকে `.agents/plugins/marketplace.json` থাকা project-এ।
