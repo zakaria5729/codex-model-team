@@ -1,7 +1,6 @@
 
 #!/usr/bin/env bash
 # Codex Model Team - project-local installer
-# Default repository: zakaria5729/codex-model-team
 
 set -Eeuo pipefail
 
@@ -43,8 +42,8 @@ Usage:
 
 Options:
   -u, --username OWNER   GitHub username or organization
-  -r, --repo NAME        Repository name (default: codex-model-team)
-      --ref REF          Git branch (default: main)
+  -r, --repo NAME        Repository name
+      --ref REF          Git branch
       --target DIR       Target project directory
   -h, --help             Show this help
 
@@ -52,14 +51,70 @@ Examples:
   ./install.sh
   ./install.sh --username another-owner
   ./install.sh --target ~/projects/my-app
-  ./install.sh --username another-owner --repo codex-model-team
 
 Default repository:
   https://github.com/zakaria5729/codex-model-team
-
-The default owner is zakaria5729.
-No username prompt is required.
 EOF
+}
+
+replace_managed_agents_section() {
+  local file="$1"
+  local section="$2"
+  local output="$3"
+  local start="$4"
+  local end="$5"
+
+  local start_count end_count
+
+  start_count="$(grep -Fxc "$start" "$file" || true)"
+  end_count="$(grep -Fxc "$end" "$file" || true)"
+
+  if [[ "$start_count" -ne "$end_count" ]] ||
+     [[ "$start_count" -gt 1 ]]; then
+    fail "AGENTS.md contains incomplete or duplicate Model Team markers."
+  fi
+
+  if [[ "$start_count" -eq 1 ]]; then
+    awk -v start="$start" -v end="$end" '
+      $0 == start { start_line = NR }
+      $0 == end { end_line = NR }
+      END {
+        exit !(start_line && end_line && start_line < end_line)
+      }
+    ' "$file" || fail "AGENTS.md markers are malformed."
+
+    awk -v start="$start" -v end="$end" \
+        -v section="$section" '
+      $0 == start {
+        print
+        while ((getline line < section) > 0) print line
+        close(section)
+        inside = 1
+        next
+      }
+
+      $0 == end {
+        inside = 0
+        print
+        next
+      }
+
+      !inside {
+        print
+      }
+    ' "$file" > "$output"
+
+  else
+    cat "$file" > "$output"
+
+    [[ ! -s "$file" ]] || printf '\n' >> "$output"
+
+    {
+      printf '%s\n' "$start"
+      cat "$section"
+      printf '%s\n' "$end"
+    } >> "$output"
+  fi
 }
 
 # --------------------------------------------------
@@ -127,21 +182,23 @@ done
 # Validate environment
 # --------------------------------------------------
 
-[[ -d "$TARGET_DIR" ]] || fail "Target directory does not exist: $TARGET_DIR"
+[[ -d "$TARGET_DIR" ]] ||
+  fail "Target directory does not exist: $TARGET_DIR"
 
 TARGET_DIR="$(cd "$TARGET_DIR" && pwd -P)"
 
 for cmd in curl tar awk grep cp mkdir mktemp cmp rm basename dirname sed cat mv; do
-  command -v "$cmd" >/dev/null 2>&1 || fail "Required command not found: $cmd"
+  command -v "$cmd" >/dev/null 2>&1 ||
+    fail "Required command not found: $cmd"
 done
 
 # --------------------------------------------------
 # Resolve repository owner
 #
 # Priority:
-# 1. --username argument
+# 1. CLI argument
 # 2. Environment variable
-# 3. Previously saved project owner
+# 3. Saved project configuration
 # 4. Default owner
 # --------------------------------------------------
 
@@ -184,20 +241,21 @@ REPO_REF="${REF_OVERRIDE:-${CODEX_MODEL_TEAM_REF:-${SAVED_REF:-$DEFAULT_REF}}}"
 # Validate repository coordinates
 # --------------------------------------------------
 
-[[ "$REPO_OWNER" =~ ^[A-Za-z0-9-]{1,39}$ ]] \
-  || fail "Invalid GitHub owner: $REPO_OWNER"
+[[ "$REPO_OWNER" =~ ^[A-Za-z0-9-]{1,39}$ ]] ||
+  fail "Invalid GitHub owner: $REPO_OWNER"
 
-[[ "$REPO_NAME" =~ ^[A-Za-z0-9._-]{1,100}$ ]] \
-  || fail "Invalid repository name: $REPO_NAME"
+[[ "$REPO_NAME" =~ ^[A-Za-z0-9._-]{1,100}$ ]] ||
+  fail "Invalid repository name: $REPO_NAME"
 
-[[ "$REPO_REF" =~ ^[A-Za-z0-9._/-]+$ ]] \
-  || fail "Invalid Git reference: $REPO_REF"
+[[ "$REPO_REF" =~ ^[A-Za-z0-9._/-]+$ ]] ||
+  fail "Invalid Git reference: $REPO_REF"
 
 REPO_URL="https://github.com/${REPO_OWNER}/${REPO_NAME}.git"
 
 ARCHIVE_URL="https://codeload.github.com/${REPO_OWNER}/${REPO_NAME}/tar.gz/refs/heads/${REPO_REF}"
 
 info "Codex Model Team"
+
 printf 'Repository : %s/%s\n' "$REPO_OWNER" "$REPO_NAME"
 printf 'Branch     : %s\n' "$REPO_REF"
 printf 'Target     : %s\n' "$TARGET_DIR"
@@ -221,15 +279,15 @@ else
 
   curl --fail --location --silent --show-error \
     "$ARCHIVE_URL" \
-    -o "$TMP_DIR/source.tar.gz" \
-    || fail "Could not download repository. Check owner, repository, and branch."
+    -o "$TMP_DIR/source.tar.gz" ||
+    fail "Could not download repository. Check owner, repository, and branch."
 
   mkdir "$TMP_DIR/source"
 
   tar -xzf "$TMP_DIR/source.tar.gz" \
     --strip-components=1 \
-    -C "$TMP_DIR/source" \
-    || fail "Could not extract repository archive."
+    -C "$TMP_DIR/source" ||
+    fail "Could not extract repository archive."
 
   SOURCE_DIR="$TMP_DIR/source"
 fi
@@ -238,11 +296,134 @@ fi
 # Validate downloaded source
 # --------------------------------------------------
 
-[[ -d "$SOURCE_DIR/.codex/agents" ]] \
-  || fail "Repository is missing .codex/agents/"
+[[ -d "$SOURCE_DIR/.codex/agents" ]] ||
+  fail "Repository is missing .codex/agents/"
 
-[[ -f "$SOURCE_DIR/plugins/$PLUGIN_NAME/plugin.json" ]] \
-  || fail "Repository is missing the plugin package."
+[[ -f "$SOURCE_DIR/plugins/$PLUGIN_NAME/plugin.json" ]] ||
+  fail "Repository is missing the plugin package."
+
+# --------------------------------------------------
+# Prepare automatic AGENTS.md instructions
+# --------------------------------------------------
+
+AGENTS_FILE="$TARGET_DIR/AGENTS.md"
+
+AGENTS_START="<!-- BEGIN CODEX MODEL TEAM -->"
+AGENTS_END="<!-- END CODEX MODEL TEAM -->"
+
+cat > "$TMP_DIR/model-team-agents-section.md" <<'EOF'
+## Codex Model Team - Default Development Workflow
+
+This project uses Codex Model Team.
+
+For non-trivial software engineering tasks, follow the Model Team
+workflow automatically. The user does not need to explicitly request
+the Model Team skill.
+
+### Task analysis
+
+- Understand the requirements before changing code.
+- Inspect relevant project files and existing conventions.
+- Identify affected modules, dependencies, and potential risks.
+
+### Codebase exploration
+
+Use `explorer` for non-trivial tasks involving:
+
+- Multiple files or modules.
+- Execution-flow investigation.
+- Dependency analysis.
+- Architecture investigation.
+- Debugging unfamiliar code.
+
+Ask explorer to provide exact file references and findings.
+Explorer should investigate, not implement.
+
+### Architecture and technical decisions
+
+Use `advisor` when a task involves:
+
+- Architecture changes.
+- Significant refactoring.
+- API or data-model changes.
+- Database migrations.
+- Security decisions.
+- Concurrency or lifecycle concerns.
+- Reliability and performance trade-offs.
+
+Advisor should analyze and recommend, not implement.
+
+### Implementation
+
+The main Codex session owns implementation.
+
+- Follow existing project conventions.
+- Keep changes focused.
+- Avoid unnecessary refactoring.
+- Handle edge cases and error paths.
+- Add or update relevant tests.
+- Run appropriate validation.
+
+### Independent code review
+
+After meaningful code changes, use `reviewer`.
+
+Prioritize:
+
+1. Functional bugs.
+2. Runtime crashes.
+3. Regression risks.
+4. Security issues.
+5. Concurrency and lifecycle problems.
+6. Performance issues.
+7. Missing tests.
+
+Fix valid important findings and rerun relevant checks.
+
+### Specialized agents
+
+- Use `ui-reviewer` when visual UI behavior or screenshots matter.
+- Use `docs-researcher` when external documentation or version-specific API behavior must be verified.
+
+### Delegation rules
+
+- Do not spawn every agent for every task.
+- Handle trivial single-file tasks directly.
+- Use only the agents relevant to the task.
+- Parallelize independent investigations when useful.
+- Wait for relevant delegated work before finalizing.
+- If an agent or model is unavailable, continue appropriately and disclose the limitation.
+
+### Final response
+
+Summarize:
+
+- What changed and why.
+- Important files changed.
+- Tests and checks actually executed.
+- Review findings and resolutions.
+- Remaining risks.
+
+Never claim that a test or validation passed unless it was actually executed.
+
+These instructions guide agent selection. They do not guarantee
+that every task will spawn every specialist.
+EOF
+
+if [[ -f "$AGENTS_FILE" ]]; then
+  replace_managed_agents_section \
+    "$AGENTS_FILE" \
+    "$TMP_DIR/model-team-agents-section.md" \
+    "$TMP_DIR/AGENTS.md" \
+    "$AGENTS_START" \
+    "$AGENTS_END"
+else
+  {
+    printf '%s\n' "$AGENTS_START"
+    cat "$TMP_DIR/model-team-agents-section.md"
+    printf '%s\n' "$AGENTS_END"
+  } > "$TMP_DIR/AGENTS.md"
+fi
 
 # --------------------------------------------------
 # Prepare marketplace configuration
@@ -309,12 +490,12 @@ elif command -v jq >/dev/null 2>&1; then
             category: "Productivity"
           }]
       )
-    ' "$MARKETPLACE_FILE" > "$TMP_DIR/marketplace.json" \
-    || fail "Could not update existing marketplace JSON."
+    ' "$MARKETPLACE_FILE" > "$TMP_DIR/marketplace.json" ||
+    fail "Could not update existing marketplace JSON."
 
 else
 
-  fail "An existing marketplace.json was found. Install jq to safely merge the Model Team marketplace without overwriting other plugins."
+  fail "An existing marketplace.json was found. Install jq to safely merge the Model Team marketplace."
 
 fi
 
@@ -359,7 +540,7 @@ for source_file in "$SOURCE_DIR"/.codex/agents/*.toml; do
 done
 
 # --------------------------------------------------
-# Register marketplace
+# Register marketplace and AGENTS.md
 # --------------------------------------------------
 
 info "Registering plugin marketplace..."
@@ -367,6 +548,10 @@ info "Registering plugin marketplace..."
 mv "$TMP_DIR/marketplace.json" "$MARKETPLACE_FILE"
 
 printf '  updated: %s\n' "$MARKETPLACE_FILE"
+
+mv "$TMP_DIR/AGENTS.md" "$AGENTS_FILE"
+
+printf '  updated: %s\n' "$AGENTS_FILE"
 
 # --------------------------------------------------
 # Configure project-local Codex settings
@@ -452,8 +637,8 @@ else
 
   if grep -Fq "$PLUGIN_TABLE" "$CONFIG_FILE"; then
 
-    if grep -A3 -F "$PLUGIN_TABLE" "$CONFIG_FILE" \
-      | grep -Eq '^[[:space:]]*enabled[[:space:]]*=[[:space:]]*false'; then
+    if grep -A3 -F "$PLUGIN_TABLE" "$CONFIG_FILE" |
+      grep -Eq '^[[:space:]]*enabled[[:space:]]*=[[:space:]]*false'; then
 
       printf '  WARNING: Plugin is explicitly disabled in config.toml\n' >&2
 
@@ -500,9 +685,10 @@ printf 'Target:     %s\n' "$TARGET_DIR"
 
 printf '\nNext steps:\n'
 printf '  1. cd "%s"\n' "$TARGET_DIR"
-printf '  2. Run: codex\n'
+printf '  2. Start a new Codex session: codex\n'
 printf '  3. Trust the project if prompted.\n'
-printf '  4. Check: codex plugin marketplace list\n'
+printf '  4. Model Team workflow is configured in AGENTS.md.\n'
+printf '  5. Check: codex plugin marketplace list\n'
 
 printf '\nAgents installed: %s\n' "$COPIED"
 printf 'Existing files preserved: %s\n' "$PRESERVED"
