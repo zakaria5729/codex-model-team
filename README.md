@@ -3,9 +3,11 @@
 
 A reusable, project-local multi-agent setup for OpenAI Codex.
 
-Codex Model Team provides specialized agents for implementation, architecture advice, code exploration, independent code review, UI review, and documentation research.
+Codex Model Team provides specialized AI agents for software implementation, architecture advice, local codebase exploration, independent code review, UI review, and documentation research.
 
-The setup is designed to be installed directly into any project without modifying global Codex configuration.
+Install it into any project with a single command and use a coordinated team of specialized agents directly through Codex.
+
+---
 
 ## Features
 
@@ -15,14 +17,16 @@ The setup is designed to be installed directly into any project without modifyin
 - GitHub-based plugin marketplace
 - One-command installation
 - No Python, Node.js, or Git required on the target machine
-- Existing project settings and agent files are preserved
+- Existing project configuration is preserved where supported
 - Custom GitHub repository owner support
+- Works across different projects and development environments
 
 ## Model Team
 
 | Role | Model | Reasoning |
 |---|---|---|
 | Main implementation | GPT-6.2 Sol | Medium |
+| Complex implementation | GPT-6.2 Astra | High |
 | Architecture advisor | GPT-6.2 Astra | High |
 | Local project explorer | GPT-6 Luna | High |
 | Independent code reviewer | GPT-6.2 Astra | High |
@@ -31,11 +35,95 @@ The setup is designed to be installed directly into any project without modifyin
 
 Model availability and supported reasoning levels depend on the Codex client, account, and workspace configuration.
 
-The installer uses Sol / Medium as the default main model only when the project does not already have a model configured.
+These are recommended configurations, not guaranteed model availability.
+
+## Agent Responsibilities
+
+### 1. Implementation
+
+Responsible for implementing requested features, fixing bugs, and modifying project code.
+
+Responsibilities:
+
+- Follow existing architecture and coding conventions.
+- Keep changes focused.
+- Avoid unnecessary refactoring.
+- Handle edge cases.
+- Add or update relevant tests.
+- Run appropriate validation.
+
+### 2. Advisor
+
+Acts as a senior software architect and independent technical advisor.
+
+Responsibilities:
+
+- Analyze requirements and architecture.
+- Evaluate implementation strategies.
+- Identify technical risks and trade-offs.
+- Recommend scalable and maintainable solutions.
+- Challenge assumptions before implementation.
+
+The advisor does not modify project files.
+
+### 3. Explorer
+
+Responsible for understanding the existing codebase.
+
+Responsibilities:
+
+- Search relevant files and symbols.
+- Trace execution paths and dependencies.
+- Understand data flows and architectural relationships.
+- Identify potential impact areas.
+- Return exact file and code references.
+
+The explorer does not modify project files.
+
+### 4. Reviewer
+
+Performs independent code reviews after implementation.
+
+Review priorities:
+
+1. Functional bugs
+2. Runtime crashes
+3. Regression risks
+4. Concurrency and lifecycle issues
+5. Memory and performance issues
+6. Security vulnerabilities
+7. Missing test coverage
+
+Every finding should include the affected file, relevant line, impact, and suggested fix.
+
+The reviewer does not modify project files.
+
+### 5. UI Reviewer
+
+Focuses on UI implementation and visual quality.
+
+Responsibilities:
+
+- Inspect screenshots and UI behavior.
+- Identify layout and visual inconsistencies.
+- Review accessibility and usability.
+- Suggest practical UI improvements.
+
+### 6. Documentation Researcher
+
+Researches external technical documentation.
+
+Responsibilities:
+
+- Find relevant official documentation.
+- Verify API usage and compatibility.
+- Research framework and library behavior.
+- Provide source references.
+- Distinguish verified information from assumptions.
+
+---
 
 ## Architecture
-
-The repository contains:
 
 ```text
 codex-model-team/
@@ -59,7 +147,8 @@ codex-model-team/
 │       ├── .codex-plugin/
 │       └── skills/
 │           └── model-team/
-│               └── SKILL.md
+│               ├── SKILL.md
+│               └── references/
 │
 ├── scripts/
 ├── tests/
@@ -67,13 +156,15 @@ codex-model-team/
 └── README.md
 ```
 
-### Plugin and custom agents
+### Plugin vs. custom agents
 
-The plugin packages the reusable `model-team` workflow skill.
+The plugin packages the reusable Model Team workflow skill.
 
-Custom Codex agents are maintained separately as project-local TOML files under `.codex/agents/`.
+Custom agents are maintained separately as project-local TOML files under `.codex/agents/`.
 
-The installer copies those agent definitions into the target project.
+The installer copies these agent definitions into the target project.
+
+---
 
 ## Installation
 
@@ -83,12 +174,13 @@ The installer copies those agent definitions into the target project.
 - Bash
 - curl
 - tar
+- Standard Unix utilities
 
-No Python, Node.js, Git, or separate toolkit clone is required on the target machine.
+No Python, Node.js, or Git is required on the target machine.
 
 ### One-command installation
 
-The default GitHub repository is:
+The official repository is:
 
 https://github.com/zakaria5729/codex-model-team
 
@@ -100,39 +192,54 @@ Run:
 curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh | bash
 ```
 
-That's it.
+That's it!
 
 The installer automatically uses:
 
-```text
-GitHub owner: zakaria5729
-Repository:   codex-model-team
-Branch:       main
-```
+| Setting | Default |
+|---|---|
+| GitHub owner | `zakaria5729` |
+| Repository | `codex-model-team` |
+| Branch | `main` |
 
 No username prompt is required.
 
 ### Install into a specific directory
 
-You can also provide a target directory:
+You can provide a target project directory:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
   | bash -s -- --target /path/to/your/project
 ```
 
-## Use another GitHub owner
+### Installation from a local repository clone
 
-The default owner is `zakaria5729`.
+If you already cloned this repository:
 
-If you fork this repository or maintain your own copy, you can override the owner:
+```bash
+git clone https://github.com/zakaria5729/codex-model-team.git
+cd codex-model-team
+chmod +x install.sh
+./install.sh
+```
+
+Run the installer from the target project directory if you want to install into the current project.
+
+---
+
+## Use a Different GitHub Owner
+
+The default repository owner is `zakaria5729`.
+
+If you fork this repository or maintain your own copy, you can override the owner.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
   | bash -s -- --username YOUR_GITHUB_USERNAME
 ```
 
-You can also use another repository name or branch:
+You can also specify another repository or branch:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
@@ -142,7 +249,16 @@ curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/i
       --ref main
 ```
 
-The selected repository coordinates are saved in:
+### Change the owner later
+
+You can change the repository owner at any time by rerunning the installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
+  | bash -s -- --username NEW_OWNER
+```
+
+The installer saves the selected repository coordinates in:
 
 ```text
 .codex/model-team.env
@@ -156,22 +272,13 @@ repo=codex-model-team
 ref=main
 ```
 
-The file contains public repository information only. It does not contain credentials or secrets.
+The saved configuration is project-local.
 
-### Change the owner later
+---
 
-You can change the repository owner at any time by rerunning the installer:
+## What Gets Installed?
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh \
-  | bash -s -- --username NEW_OWNER
-```
-
-The installer updates the saved repository coordinates and marketplace source.
-
-## What gets installed?
-
-The installer creates or updates:
+After installation, your project will contain:
 
 ```text
 your-project/
@@ -191,6 +298,8 @@ your-project/
         └── marketplace.json
 ```
 
+The installer also configures the Model Team plugin in the project-local Codex configuration.
+
 ### Existing project protection
 
 The installer is designed to preserve existing project configuration.
@@ -198,21 +307,23 @@ The installer is designed to preserve existing project configuration.
 - Existing agent files are not overwritten.
 - Existing main model settings are preserved.
 - Existing project-level Codex settings are preserved.
-- Existing marketplace plugins are retained when `jq` is available for safe JSON merging.
-- If an existing marketplace needs merging but `jq` is unavailable, the installer stops instead of overwriting it.
+- Existing marketplace plugins are retained when safe JSON merging is available.
+- If an existing marketplace needs merging but `jq` is unavailable, the installer stops rather than overwriting it.
 
-The installer does not modify:
+The installer does not modify your global Codex configuration:
 
 ```text
 ~/.codex/config.toml
 ~/.codex/agents/
 ```
 
-All agent configuration is project-local.
+All custom agent configurations are project-local.
 
-## Start using Model Team
+---
 
-After installation:
+## Start Using Model Team
+
+After installation, open Codex from your project directory:
 
 ```bash
 cd /path/to/your/project
@@ -221,37 +332,110 @@ codex
 
 Trust the project if Codex asks.
 
-Check the marketplace:
+You can inspect available marketplace commands:
+
+```bash
+codex plugin marketplace --help
+```
+
+Check registered marketplaces:
 
 ```bash
 codex plugin marketplace list
 ```
 
-Then ask Codex:
+### Example workflow prompt
+
+Give Codex a task like this:
 
 ```text
 Use the Model Team skill for this task.
 
-1. Have explorer inspect the relevant codebase.
-2. Have advisor analyze the architecture and recommend an approach.
-3. Have implementation implement the agreed changes.
-4. Have reviewer independently review the final diff.
+1. Ask explorer to inspect the relevant codebase.
+2. Ask advisor to analyze the architecture and recommend an approach.
+3. Ask implementation to implement the agreed changes.
+4. Ask reviewer to independently review the final diff.
 5. Fix important findings and run relevant tests.
 
 Use ui-reviewer when visual inspection is relevant.
 Use docs-researcher when external documentation research is needed.
 
-Provide a final summary with changed files, tests, and review findings.
+Provide a final summary with:
+- Implementation approach
+- Changed files
+- Tests executed
+- Review findings
+- Remaining risks
 ```
 
-## Using Model Team on another PC
+Codex coordinates the specialized agents according to the task and their instructions.
 
-The target project's following files can be committed to its Git repository:
+---
 
-- `.codex/config.toml`
-- `.codex/agents/`
-- `.codex/model-team.env`
-- `.agents/plugins/marketplace.json`
+## Example Use Cases
+
+### Android Development
+
+```text
+I want to migrate this Android project from Gson
+to Kotlin Serialization.
+
+Use Model Team:
+
+- Explorer: inspect existing serialization architecture.
+- Advisor: evaluate the migration strategy.
+- Implementation: perform the migration.
+- Reviewer: independently review all changes.
+
+Check backward compatibility, custom serializers,
+null handling, and runtime crash risks.
+
+Run relevant tests and provide a final report.
+```
+
+### Spring Boot Development
+
+```text
+I want to introduce authentication into this
+Spring Boot application.
+
+Use Model Team:
+
+- Explorer: inspect existing security architecture.
+- Advisor: evaluate JWT, OAuth2, and Keycloak options.
+- Implementation: implement the agreed solution.
+- Reviewer: review security and regression risks.
+
+Follow production-ready Spring Security practices.
+```
+
+### Bug Investigation
+
+```text
+Investigate this production bug.
+
+- Explorer: trace the execution path.
+- Advisor: identify possible root causes.
+- Implementation: implement the fix.
+- Reviewer: verify the fix and look for regressions.
+
+Do not perform unrelated refactoring.
+```
+
+---
+
+## Using Model Team on Another PC
+
+You can share the target project's configuration through Git.
+
+Commit these project-local files:
+
+```text
+.codex/config.toml
+.codex/agents/
+.codex/model-team.env
+.agents/plugins/marketplace.json
+```
 
 On another PC:
 
@@ -263,26 +447,28 @@ On another PC:
 
 The plugin package is fetched and cached by Codex on each PC.
 
-Your Codex authentication is not included in the project repository.
+Codex authentication and account credentials are not included in the project repository.
 
-## Update Model Team
+---
 
-To update the custom agent templates, rerun the installer.
+## Updating Model Team
 
-Existing agent files are intentionally preserved. Review and merge template changes when necessary.
-
-To refresh the plugin marketplace source, use the marketplace commands supported by your installed Codex CLI:
+To retrieve the latest agent templates, rerun the installer.
 
 ```bash
-codex plugin marketplace --help
+curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh | bash
 ```
+
+**Important:** Existing agent files are intentionally preserved. If the repository contains updated agent templates, review and merge those changes into your existing project files when necessary.
+
+---
 
 ## Uninstall
 
 To remove Model Team from a project:
 
-1. Remove the Model Team plugin entry from `.codex/config.toml`.
-2. Remove its marketplace entry from `.agents/plugins/marketplace.json`.
+1. Remove the Model Team plugin configuration from `.codex/config.toml`.
+2. Remove the Model Team entry from `.agents/plugins/marketplace.json`.
 3. Remove the Model Team agent TOML files from `.codex/agents/`.
 4. Remove `.codex/model-team.env`.
 
@@ -290,74 +476,31 @@ Do not delete a marketplace file if it contains other plugins you still use.
 
 Codex manages its local plugin cache separately.
 
-## Repository validation
+---
 
-Maintainers can run the repository validation suite:
+## Repository Validation
+
+Maintainers can run the repository validation scripts:
 
 ```bash
 python3 scripts/validate_repository.py
 python3 -m unittest discover -s tests -v
 ```
 
-Python is only needed for maintainer tests, not for end-user installation.
-
-## Contributing
-
-Issues and pull requests are welcome.
-
-If you fork this repository, use your own GitHub owner with the `--username` option.
-
-## License
-
-MIT License. See [LICENSE](LICENSE).
-```
+Python is only needed for maintainer validation, not for end-user installation.
 
 ---
 
-## 3. GitHub-এ কী করবে
+## Contributing
 
-<box border radius="lg" padding={3} gap={3}>
-  <row align="center" gap={2}>
-    <icon name="github" size="xl"/>
-    **File update checklist**
-  </row>
-  <list marker="number" gap={2}>
-    <list-item>
-      [install.sh Edit](https://github.com/zakaria5729/codex-model-team/edit/main/install.sh) খুলবে।
-      
-      পুরো content replace করে Commit changes করবে।
-    </list-item>
-    <list-item>
-      [README.md Edit](https://github.com/zakaria5729/codex-model-team/edit/main/README.md) খুলবে।
-      
-      পুরো content replace করে Commit changes করবে।
-    </list-item>
-    <list-item>
-      দুটো ফাইলই `main` branch-এ commit হয়েছে কিনা নিশ্চিত করবে।
-    </list-item>
-  </list>
-</box>
+Contributions, bug reports, and feature suggestions are welcome.
 
-## 4. Installation test
+If you fork this repository, use your own GitHub owner with the `--username` option.
 
-Commit করার পর অন্য একটি project directory-তে গিয়ে এই command চালিয়ে পরীক্ষা করতে পারো:
+---
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/zakaria5729/codex-model-team/main/install.sh | bash
-```
+## License
 
-Expected output-এ দেখতে পাবে:
+MIT License.
 
-```text
-Repository : zakaria5729/codex-model-team
-Branch     : main
-
-==> Downloading repository...
-==> Installing project-local agents...
-==> Registering plugin marketplace...
-==> Configuring Codex...
-
-Codex Model Team installed successfully
-```
-
-**একটি বিষয়:** আমি এখানে GitHub repository-তে সরাসরি commit করিনি। এই content তোমাকে নিজে paste করে commit করতে হবে। আর production ব্যবহারের আগে installer-টি একটি disposable test project-এ পরীক্ষা করো—বিশেষ করে আগে থেকে `.agents/plugins/marketplace.json` থাকা project-এ।
+See [LICENSE](LICENSE).
