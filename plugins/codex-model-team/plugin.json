@@ -1,0 +1,42 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "codex-model-team",
+  "version": "0.1.0",
+  "description": "A reusable Codex workflow for coordinating specialized project-local coding agents.",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "coding-agents",
+    "multi-agent",
+    "code-review",
+    "architecture",
+    "codebase-exploration"
+  ],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/model-team/SKILL.md",
+      "interface": {
+        "displayName": "Codex Model Team",
+        "shortDescription": "Agent workflows for Codex",
+        "longDescription": "Coordinate a project-local team for software development. The skill guides Codex through codebase exploration, architecture planning, implementation, independent code review, and optional UI or documentation checks. It can also set up project-local agent TOML files under .codex/agents/. It does not install agents globally, run background services, or guarantee that a particular model is available on every account; model IDs and reasoning settings can be adjusted for the current Codex environment.",
+        "developerName": "REPLACE WITH YOUR VERIFIED PUBLISHER NAME",
+        "category": "Developer Tools",
+        "capabilities": [
+          "Codebase exploration",
+          "Architecture planning",
+          "Implementation workflows",
+          "Independent code review",
+          "Project-local agent setup"
+        ],
+        "defaultPrompt": [
+          "Use Codex Model Team to plan, implement, and review this change.",
+          "Set up the Model Team agents in this project only.",
+          "Use the explorer and advisor before implementing this complex change."
+        ],
+        "brandColor": "#2563EB",
+        "composerIcon": "./assets/model-team-icon.svg",
+        "logo": "./assets/model-team-logo.svg"
+      }
+    }
+  }
+}

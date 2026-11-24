@@ -1,0 +1,6 @@
+{
+  "name": "codex-model-team",
+  "version": "0.1.0",
+  "description": "A reusable Codex workflow for coordinating specialized project-local coding agents.",
+  "onboardingSkill": "./skills/model-team/SKILL.md"
+}

@@ -1,0 +1,20 @@
+{
+  "name": "codex-model-team",
+  "interface": {
+    "displayName": "Codex Model Team"
+  },
+  "plugins": [
+    {
+      "name": "codex-model-team",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-model-team"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
